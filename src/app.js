@@ -11,7 +11,6 @@ const xss = require('xss-clean');
 
 const routes = require('./routes/index');
 const { errorHandler } = require('./middlewares/error.middleware');
-const logger = require('./utils/logger');
 
 const app = express();
 
@@ -45,7 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(mongoSanitize());
 app.use(xss());
-// hpp() removed — Node.js v22 incompatible
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
