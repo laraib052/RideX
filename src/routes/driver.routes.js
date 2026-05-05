@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const DriverController = require('../controllers/driver.controller');
-const { verifyFirebaseToken } = require('../middlewares/auth.middleware');
+const { requireAuth } = require('../middlewares/auth.middleware'); // ✅
 const { requireRole } = require('../middlewares/role.middleware');
 
-router.use(verifyFirebaseToken, requireRole('driver'));
+router.use(requireAuth, requireRole('driver')); // ✅
 
 router.post('/profile', DriverController.createProfile);
 router.get('/profile', DriverController.getProfile);
