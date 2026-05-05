@@ -2,6 +2,8 @@ const UserRepository = require('../repositories/user.repository');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || '45aa441ee8d6522b09c5f20518a1e52067c5a8fea71766e87229141a6c590e791b9e2a49392f50e5abf854e60aa13d143ed77c435a1d58433d5a04bee785b09e';
+
 class AuthService {
   async registerUser({ name, email, phone, password, role }) {
     const existing = await UserRepository.findByEmail(email);
@@ -43,9 +45,10 @@ class AuthService {
   }
 
   _generateToken(user) {
+    console.log('JWT_SECRET:', JWT_SECRET ? 'SET ✅' : 'MISSING ❌');
     return jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '30d' }
     );
   }
