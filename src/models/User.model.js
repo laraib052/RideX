@@ -2,18 +2,18 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
-    // Firebase UID — this links Firebase Auth to our DB record
-    firebaseUid: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
     name: {
       type: String,
       required: [true, 'Name is required'],
       trim: true,
       maxlength: 100,
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
     phone: {
       type: String,
@@ -21,11 +21,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       match: [/^\+?[1-9]\d{1,14}$/, 'Invalid phone number'],
     },
-    email: {
+    // ✅ Password add kiya (Firebase ki jagah)
+    password: {
       type: String,
-      sparse: true, // allows null but must be unique when set
-      lowercase: true,
-      trim: true,
+      required: [true, 'Password is required'],
+      minlength: 6,
     },
     role: {
       type: String,
@@ -34,21 +34,18 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     profilePhoto: String,
-
-    // FCM token for push notifications (updated on each app open)
     fcmToken: String,
 
     isVerified: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true },
-    isBlocked: { type: Boolean, default: false },
-    isAdmin: { type: Boolean, default: false },
+    isActive:   { type: Boolean, default: true },
+    isBlocked:  { type: Boolean, default: false },
+    isAdmin:    { type: Boolean, default: false },
 
-    // Rider-specific
-    rating: { type: Number, default: 5.0, min: 1, max: 5 },
+    rating:     { type: Number, default: 5.0, min: 1, max: 5 },
     totalRides: { type: Number, default: 0 },
   },
   {
-    timestamps: true, // adds createdAt, updatedAt automatically
+    timestamps: true,
   }
 );
 

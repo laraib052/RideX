@@ -1,17 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const AuthController = require('../controllers/auth.controller');
-const { verifyFirebaseToken } = require('../middlewares/auth.middleware');
+const { requireAuth } = require('../middlewares/auth.middleware');
 
-// POST /api/auth/register
-// Body: { name, phone, email, role }
-// Header: Authorization: Bearer <firebase_token>
-router.post('/register', verifyFirebaseToken, AuthController.register);
-
-// GET /api/auth/profile
-router.get('/profile', verifyFirebaseToken, AuthController.getProfile);
-
-// PATCH /api/auth/fcm-token
-router.patch('/fcm-token', verifyFirebaseToken, AuthController.updateFcmToken);
+router.post('/register', AuthController.register);  // Public
+router.post('/login',    AuthController.login);     // Public ✅ YEH MISSING THA
+router.get('/profile',   requireAuth, AuthController.getProfile);
+router.patch('/fcm-token', requireAuth, AuthController.updateFcmToken);
 
 module.exports = router;

@@ -1,29 +1,10 @@
-const User = require('../models/User.model');
+const User = require('../models/user.model');
 
 class UserRepository {
-  async create(data) {
-    return User.create(data);
-  }
-
-  async findByFirebaseUid(firebaseUid) {
-    return User.findOne({ firebaseUid });
-  }
-
-  async findById(id) {
-    return User.findById(id);
-  }
-
-  async findByPhone(phone) {
-    return User.findOne({ phone });
-  }
-
-  async updateById(id, data) {
-    return User.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-  }
-
-  async updateFcmToken(userId, fcmToken) {
-    return User.findByIdAndUpdate(userId, { fcmToken });
-  }
+  findByEmail(email)          { return User.findOne({ email }); }
+  findById(id)                { return User.findById(id); }
+  create(data)                { return User.create(data); }
+  updateFcmToken(id, token)   { return User.findByIdAndUpdate(id, { fcmToken: token }); }
 }
 
-module.exports = new UserRepository(); // Singleton
+module.exports = new UserRepository();

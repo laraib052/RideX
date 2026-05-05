@@ -4,14 +4,25 @@ const { success, created } = require('../utils/response.util');
 
 class RideController {
   async createRide(req, res, next) {
-    try {
-      const ride = await RideService.createRide(req.user._id, req.body);
-      return created(res, ride, 'Ride created. Waiting for bids...');
-    } catch (err) {
-      next(err);
-    }
-  }
+  try {
+    const ride = await RideService.createRide(req.user._id, req.body);
 
+    const { getIO } = require('../sockets/socket.manager');
+
+    getIO().emit('new_ride_request', {
+      rideId: ride._id,
+      vehicleType: ride.vehicleType,
+      pickup: ride.pickup,
+      fareOffered: ride.fareOffered,
+      riderId: ride.riderId,
+      timestamp: new Date(),
+    });
+
+    return created(res, ride, 'Ride created. Waiting for bids...');
+  } catch (err) {
+    next(err);
+  }
+}
   async getRide(req, res, next) {
     try {
       const ride = await RideService.getRideById(req.params.rideId);

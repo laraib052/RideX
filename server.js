@@ -20,10 +20,10 @@ async function startServer() {
 
   // 4. Start listening
   httpServer.listen(PORT, () => {
-    logger.info(`🚀 RideX server running on port ${PORT}`);
-    logger.info(`📡 Environment: ${process.env.NODE_ENV}`);
-    logger.info(`🔗 API: http://localhost:${PORT}/api`);
-    logger.info(`❤️  Health: http://localhost:${PORT}/api/health`);
+    logger.info(` RideX server running on port ${PORT}`);
+    logger.info(` Environment: ${process.env.NODE_ENV}`);
+    logger.info(`API: http://localhost:${PORT}/api`);
+    logger.info(`Health: http://localhost:${PORT}/api/health`);
   });
 
   // Handle unhandled promise rejections
