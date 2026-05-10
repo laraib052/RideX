@@ -44,6 +44,11 @@ const rideSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
+    vehicleType: {
+  type: String,
+  enum: ['taxi', 'bike', 'rickshaw'],
+  default: 'taxi',
+},
 
     // Rider's suggested price (inDrive model)
     suggestedFare: { type: Number, required: true },

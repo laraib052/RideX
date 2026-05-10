@@ -3,25 +3,70 @@ const RideRepository = require('../repositories/ride.repository');
 const { success, created } = require('../utils/response.util');
 
 class RideController {
-  async createRide(req, res, next) {
-  try {
-    const ride = await RideService.createRide(req.user._id, req.body);
-
-    const { getIO } = require('../sockets/socket.manager');
-
-    getIO().emit('new_ride_request', {
-      rideId: ride._id,
-      vehicleType: ride.vehicleType,
-      pickup: ride.pickup,
-      fareOffered: ride.fareOffered,
-      riderId: ride.riderId,
-      timestamp: new Date(),
-    });
-
-    return created(res, ride, 'Ride created. Waiting for bids...');
-  } catch (err) {
-    next(err);
+  
+  async createRide(riderId, body) {
+  const activeRide = await RideRepository.getActiveRide(riderId);
+  if (activeRide) {
+    throw Object.assign(new Error('You already have an active ride'), { statusCode: 409 });
   }
+
+  // ✅ Flutter dono formats support karo
+  const pickupAddress = body.pickupAddress || body.pickup?.address || '';
+  const pickupLat     = body.pickupLat     || body.pickup?.latitude  || 0;
+  const pickupLng     = body.pickupLng     || body.pickup?.longitude || 0;
+  const destAddress   = body.destAddress   || body.dropoff?.address  || body.destination?.address || '';
+  const destLat       = body.destLat       || body.dropoff?.latitude  || body.destination?.latitude  || 0;
+  const destLng       = body.destLng       || body.dropoff?.longitude || body.destination?.longitude || 0;
+  const suggestedFare = body.suggestedFare || body.fareOffered || 0;
+  const vehicleType   = body.vehicleType   || 'taxi';
+
+  const distanceKm    = getDistance(pickupLat, pickupLng, destLat, destLng);
+  const estimatedFare = suggestedFare || estimateFare(distanceKm);
+
+  const ride = await RideRepository.create({
+    rider: riderId,
+    vehicleType,
+    pickup: {
+      address: pickupAddress,
+      coordinates: { type: 'Point', coordinates: [pickupLng, pickupLat] },
+    },
+    destination: {
+      address: destAddress,
+      coordinates: { type: 'Point', coordinates: [destLng, destLat] },
+    },
+    suggestedFare: estimatedFare,
+    fareOffered:   estimatedFare,
+    distance: Math.round(distanceKm * 10) / 10,
+    timeline: { createdAt: new Date() },
+  });
+
+  // Nearby drivers notify karo
+  try {
+    const nearbyDrivers = await DriverRepository.findNearbyDrivers(pickupLng, pickupLat, 8);
+    if (nearbyDrivers.length > 0) {
+      const io = getIO();
+      nearbyDrivers.forEach((driverProfile) => {
+        io.to(`driver_${driverProfile.user._id}`).emit('new_ride_request', {
+          rideId:        ride._id,
+          pickup:        pickupAddress,
+          destination:   destAddress,
+          suggestedFare: estimatedFare,
+          distance:      ride.distance,
+          vehicleType,
+        });
+      });
+
+      const tokens = nearbyDrivers.map((d) => d.user.fcmToken).filter(Boolean);
+      await NotificationService.sendToMultiple(
+        tokens,
+        '🚗 New Ride Request!',
+        `Pickup: ${pickupAddress}`,
+        { type: 'NEW_RIDE', rideId: String(ride._id) }
+      );
+    }
+  } catch (_) {}
+
+  return ride;
 }
   async getRide(req, res, next) {
     try {

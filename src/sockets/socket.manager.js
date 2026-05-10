@@ -1,5 +1,5 @@
 const { Server } = require('socket.io');
-const admin = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 const UserRepository = require('../repositories/user.repository');
 const logger = require('../utils/logger');
 
@@ -8,23 +8,24 @@ let io;
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: '*', // Restrict to your domain in production
+      origin: '*',
       methods: ['GET', 'POST'],
     },
     pingTimeout: 60000,
   });
 
-  // Middleware — authenticate every socket connection using Firebase token
+  
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
       if (!token) return next(new Error('No token'));
 
-      const decoded = await admin.auth().verifyIdToken(token);
-      const user = await UserRepository.findByFirebaseUid(decoded.uid);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await UserRepository.findById(decoded.id);
       if (!user) return next(new Error('User not found'));
+      if (user.isBlocked) return next(new Error('Account suspended'));
 
-      socket.user = user; // Attach user to socket
+      socket.user = user;
       next();
     } catch (err) {
       next(new Error('Auth failed'));
@@ -35,27 +36,28 @@ const initSocket = (httpServer) => {
     const user = socket.user;
     logger.info(`🔌 Socket connected: ${user.name} (${user.role})`);
 
-    // Each user joins a personal room for direct messages
+    // ✅ Personal room
     socket.join(`user_${user._id}`);
 
+    // ✅ Driver apna room join kare
     if (user.role === 'driver') {
       socket.join(`driver_${user._id}`);
+      logger.info(`🚗 Driver joined room: driver_${user._id}`);
     }
 
-    // Load ride socket events
+    // Load ride/bid socket events
     require('./ride.socket')(socket, io);
     require('./bid.socket')(socket, io);
 
     socket.on('disconnect', () => {
-      logger.info(`❌ Socket disconnected: ${user.name}`);
+      logger.info(`Socket disconnected: ${user.name}`);
     });
   });
 
-  logger.info('✅ Socket.io initialized');
+  logger.info(' Socket.io initialized');
   return io;
 };
 
-// Allows services to emit events anywhere in the app
 const getIO = () => {
   if (!io) throw new Error('Socket.io not initialized');
   return io;
