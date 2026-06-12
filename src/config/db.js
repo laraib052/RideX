@@ -31,7 +31,8 @@ const connectDB = async () => {
     );
 
     // Append 'ridex' as the target database
-    const finalUri = `${uriWithoutDb}ridex`;
+    const finalUri = `${uriWithoutDb}/ridex`;
+    
 
     await mongoose.connect(finalUri, {
       // These are recommended for Railway + Atlas
