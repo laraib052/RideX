@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-app.set('trust proxy', 1);
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -10,7 +9,11 @@ const rateLimit = require('express-rate-limit');
 const routes = require('./routes/index');
 const { errorHandler } = require('./middlewares/error.middleware');
 
+// 1. Pehle app ko initialize kiya (Yeh line hum upar le aaye hain)
 const app = express();
+
+// 2. Ab app ki baaki settings aur middlewares chalenge
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors({ origin: '*' }));
