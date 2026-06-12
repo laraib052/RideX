@@ -33,6 +33,7 @@ const rideSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
+        'searching',
         'pending',       // Rider created, waiting for driver bids
         'bidding',       // Drivers are placing bids
         'accepted',      // Rider accepted a bid

@@ -5,7 +5,7 @@ const required = [
 
 required.forEach((key) => {
   if (!process.env[key]) {
-    console.error(`❌ Missing required env var: ${key}`);
+    console.error(` Missing required env var: ${key}`);
     process.exit(1);
   }
 });

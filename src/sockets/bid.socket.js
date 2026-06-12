@@ -1,75 +1,73 @@
+// src/sockets/bid.socket.js
+// Handles: join_bidding → place_bid → accept_bid → bid_closed
+
 const logger = require('../utils/logger');
 
 module.exports = (socket, io) => {
 
-  // Driver joins ride room to start bidding
+  // ─────────────────────────────────────────────────────────────
+  // EVENT: join_bidding
+  // Driver joins ride room to participate in bidding
+  // ─────────────────────────────────────────────────────────────
   socket.on('join_bidding', ({ rideId }) => {
     if (socket.user.role !== 'driver') return;
     socket.join(`ride_${rideId}`);
     socket.emit('joined_bidding', { rideId });
-    logger.info(`Driver ${socket.user.name} joined bidding for ride_${rideId}`);
+    logger.info(`Driver ${socket.user.name} joined bidding: ride_${rideId}`);
   });
 
   socket.on('leave_bidding', ({ rideId }) => {
     socket.leave(`ride_${rideId}`);
   });
 
-  // Driver places a bid → notify rider in that ride room
+  // ─────────────────────────────────────────────────────────────
+  // EVENT: place_bid
+  // Driver sends bid amount → rider sees it in FareNegotiationScreen
+  // ─────────────────────────────────────────────────────────────
   socket.on('place_bid', ({ rideId, amount, message }) => {
     if (socket.user.role !== 'driver') return;
 
+    logger.info(`💰 Driver ${socket.user.name} bid Rs.${amount} on ride ${rideId}`);
+
     io.to(`ride_${rideId}`).emit('new_bid', {
       rideId,
-      bidId:    null, // DB bidId comes from REST response
-      driverId: socket.user._id,
+      bidId:        null,   // REST call returns actual DB bidId
+      driverId:     socket.user._id.toString(),
       driverName:   socket.user.name,
+      driverPhone:  socket.user.phone  || '',
       driverRating: socket.user.rating || 0,
       amount,
-      message:  message || '',
-      timestamp: new Date(),
+      message:      message || '',
+      timestamp:    new Date(),
     });
-
-    logger.info(`Driver ${socket.user.name} bid ${amount} on ride ${rideId}`);
   });
 
-  // Rider accepts a bid → notify that specific driver
-  socket.on('accept_bid', ({ rideId, driverId, bidId }) => {
+  // ─────────────────────────────────────────────────────────────
+  // EVENT: accept_bid
+  // Rider accepts a specific driver's bid
+  // Flow: notify winning driver → close bidding for others
+  // ─────────────────────────────────────────────────────────────
+  socket.on('accept_bid', ({ rideId, driverId, bidId, fare }) => {
     if (socket.user.role !== 'rider') return;
 
-    // Notify the winning driver directly via their personal room
+    logger.info(`✅ Rider ${socket.user.name} accepted bid from driver ${driverId}`);
+
+    // ── Notify WINNING driver → go to DriverActiveRideScreen ──
     io.to(`driver_${driverId}`).emit('bid_accepted', {
       rideId,
       bidId,
-      riderId:   socket.user._id,
-      riderName: socket.user.name,
-      riderPhone: socket.user.phone,
-      timestamp: new Date(),
+      riderId:    socket.user._id.toString(),
+      riderName:  socket.user.name,
+      riderPhone: socket.user.phone || '',
+      fare:       fare || 0,
+      otp:        Math.floor(1000 + Math.random() * 9000).toString(),
+      timestamp:  new Date(),
     });
 
-    // Notify all other drivers in the room that bidding is closed
+    // ── Notify ALL other drivers in room — bidding closed ──
     socket.to(`ride_${rideId}`).emit('bid_closed', {
       rideId,
-      message: 'Rider selected another driver',
+      message: 'Rider selected another driver.',
     });
-
-    logger.info(`Rider ${socket.user.name} accepted bid ${bidId} from driver ${driverId}`);
-  });
-
-  // New ride created → notify all online drivers (broadcast)
-  socket.on('broadcast_ride_request', ({ rideId, vehicleType, pickup, fareOffered }) => {
-    if (socket.user.role !== 'rider') return;
-
-    // Emit to all connected drivers
-    io.emit('new_ride_request', {
-      rideId,
-      vehicleType,
-      pickup,
-      fareOffered,
-      riderId:   socket.user._id,
-      riderName: socket.user.name,
-      timestamp: new Date(),
-    });
-
-    logger.info(`New ride request ${rideId} broadcast for ${vehicleType}`);
   });
 };
