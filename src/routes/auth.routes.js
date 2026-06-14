@@ -5,7 +5,7 @@ const router         = express.Router();
 const AuthController = require('../controllers/auth.controller');
 const { registerDriver } = require('../controllers/auth.controller');
 const { requireAuth }    = require('../middlewares/auth.middleware');
-const { driverDocUpload } = require('../middleware/upload.middleware');
+const { driverDocUpload } = require('../middlewares/upload.middleware');
 
 router.post('/register',         AuthController.register);                   // Rider
 router.post('/register/driver',  driverDocUpload, registerDriver);           // Driver ← NEW
