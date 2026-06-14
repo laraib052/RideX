@@ -2,7 +2,7 @@
 
 const bcrypt        = require('bcryptjs');
 const jwt           = require('jsonwebtoken');
-const User          = require('../models/user.model');
+const User          = require('../models/User.model');
 const DriverProfile = require('../models/DriverProfile.model');// ⚠️ adjust path to your actual file
 const AuthService   = require('../services/auth.service');
 const { success, created } = require('../utils/response.util');
