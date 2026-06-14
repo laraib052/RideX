@@ -1,3 +1,5 @@
+// Path: src/sockets/socket.manager.js
+
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const UserRepository = require('../repositories/user.repository');
@@ -11,10 +13,10 @@ const initSocket = (httpServer) => {
       origin: '*',
       methods: ['GET', 'POST'],
     },
-    pingTimeout: 60000,
+    pingTimeout:  60000,
+    pingInterval: 25000,   // ← ADD (keeps Railway connection alive)
   });
 
-  
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
@@ -22,7 +24,7 @@ const initSocket = (httpServer) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await UserRepository.findById(decoded.id);
-      if (!user) return next(new Error('User not found'));
+      if (!user)          return next(new Error('User not found'));
       if (user.isBlocked) return next(new Error('Account suspended'));
 
       socket.user = user;
@@ -36,25 +38,23 @@ const initSocket = (httpServer) => {
     const user = socket.user;
     logger.info(`🔌 Socket connected: ${user.name} (${user.role})`);
 
-    // ✅ Personal room
     socket.join(`user_${user._id}`);
 
-    // ✅ Driver apna room join kare
     if (user.role === 'driver') {
       socket.join(`driver_${user._id}`);
       logger.info(`🚗 Driver joined room: driver_${user._id}`);
     }
 
-    // Load ride/bid socket events
     require('./ride.socket')(socket, io);
     require('./bid.socket')(socket, io);
+    require('./chat.socket')(socket, io);   // ← ADD THIS LINE ONLY
 
     socket.on('disconnect', () => {
       logger.info(`Socket disconnected: ${user.name}`);
     });
   });
 
-  logger.info(' Socket.io initialized');
+  logger.info('✅ Socket.io initialized');
   return io;
 };
 

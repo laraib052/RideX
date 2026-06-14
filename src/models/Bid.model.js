@@ -1,50 +1,46 @@
+// src/models/bid.model.js
 const mongoose = require('mongoose');
 
 const bidSchema = new mongoose.Schema(
   {
     ride: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Ride',
+      type:     mongoose.Schema.Types.ObjectId,
+      ref:      'Ride',
       required: true,
-      index: true,
+      index:    true,
     },
     driver: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    driverProfile: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'DriverProfile',
+      type:     mongoose.Schema.Types.ObjectId,
+      ref:      'User',
       required: true,
     },
 
     amount: {
-      type: Number,
+      type:    Number,
       required: [true, 'Bid amount required'],
-      min: [1, 'Bid must be positive'],
+      min:     [1,    'Bid must be positive'],
     },
 
     status: {
-      type: String,
-      enum: ['pending', 'accepted', 'rejected', 'expired'],
+      type:    String,
+      enum:    ['pending', 'accepted', 'rejected', 'expired'],
       default: 'pending',
-      index: true,
+      index:   true,
     },
 
-    message: { type: String, maxlength: 200 }, // Optional note from driver
+    message: { type: String, maxlength: 200 },
 
-    // Expires after 5 min if not accepted
+    // Auto-deletes after 5 minutes if not accepted
     expiresAt: {
-      type: Date,
+      type:    Date,
       default: () => new Date(Date.now() + 5 * 60 * 1000),
-      index: { expireAfterSeconds: 0 }, // MongoDB TTL auto-deletes
+      index:   { expireAfterSeconds: 0 },
     },
   },
   { timestamps: true }
 );
 
-// One driver can only have one active bid per ride
+// One active bid per driver per ride
 bidSchema.index({ ride: 1, driver: 1 }, { unique: true });
 
 module.exports = mongoose.model('Bid', bidSchema);

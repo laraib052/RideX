@@ -10,30 +10,41 @@ const driverProfileSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Vehicle details
+    // ── Vehicle details ──────────────────────────
     vehicle: {
-      make: { type: String, required: true },      // e.g. "Toyota"
-      model: { type: String, required: true },     // e.g. "Corolla"
-      year: { type: Number, required: true },
-      color: { type: String, required: true },
-      plateNumber: { type: String, required: true, unique: true },
       type: {
         type: String,
-        enum: ['sedan', 'suv', 'bike', 'auto'],
+        enum: ['car', 'rickshaw', 'bike'],
         required: true,
       },
+      make:  { type: String, required: true },   // e.g. "Toyota"
+      model: { type: String, required: true },   // e.g. "Corolla"
+      year:  { type: Number, required: true },
+      color: { type: String, required: true },
+      plateNumber: { type: String, required: true, unique: true },
     },
 
-    // License & documents
+    // ── License & documents ───────────────────────
     licenseNumber: { type: String, required: true },
     licenseExpiry: { type: Date, required: true },
-    cnicNumber: { type: String, required: true },
+    licensePhoto:  { type: String, required: true }, // URL/path
 
-    isApproved: { type: Boolean, default: false },
+    cnicNumber:    { type: String, required: true },
+    cnicFrontPhoto: { type: String, required: true }, // URL/path
+    cnicBackPhoto:  { type: String, required: true }, // URL/path
+
+    // ── Verification ──────────────────────────────
+    isVerified: { type: Boolean, default: false }, // admin approves docs
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    rejectionReason: { type: String, default: null },
+
+    // ── Availability ──────────────────────────────
     isOnline: { type: Boolean, default: false, index: true },
 
-    // GeoJSON Point — MongoDB native geo format
-    // Enables $near, $geoWithin queries for finding nearby drivers
     currentLocation: {
       type: {
         type: String,
@@ -41,25 +52,24 @@ const driverProfileSchema = new mongoose.Schema(
         default: 'Point',
       },
       coordinates: {
-        type: [Number], // [longitude, latitude] — note: lng FIRST
+        type: [Number], // [longitude, latitude]
         default: [0, 0],
       },
     },
 
-    rating: { type: Number, default: 5.0 },
+    rating:     { type: Number, default: 5.0 },
     totalRides: { type: Number, default: 0 },
 
     earnings: {
-      total: { type: Number, default: 0 },
-      thisWeek: { type: Number, default: 0 },
+      total:     { type: Number, default: 0 },
+      thisWeek:  { type: Number, default: 0 },
       thisMonth: { type: Number, default: 0 },
     },
   },
   { timestamps: true }
 );
 
-// 2dsphere index — REQUIRED for geo queries
 driverProfileSchema.index({ currentLocation: '2dsphere' });
-driverProfileSchema.index({ isOnline: 1, isApproved: 1 });
+driverProfileSchema.index({ isOnline: 1, isVerified: 1 });
 
 module.exports = mongoose.model('DriverProfile', driverProfileSchema);
