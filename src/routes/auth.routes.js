@@ -13,4 +13,4 @@ router.post('/login',            AuthController.login);
 router.get('/profile',           requireAuth, AuthController.getProfile);
 router.patch('/fcm-token',       requireAuth, AuthController.updateFcmToken);
 
-module.exports = router;   // ← only one export, at the bottom
+module.exports = router;   // ← only one export, at the bottom                                  
