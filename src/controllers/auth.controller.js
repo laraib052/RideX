@@ -184,7 +184,7 @@ const registerDriver = async (req, res) => {
     // ── Issue JWT ──
     const token = jwt.sign(
       { id: user._id, role: 'driver' },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'RideX_Super_Secret_Fallback_Key_2026', 
       { expiresIn: '30d' }
     );
 
