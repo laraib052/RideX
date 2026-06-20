@@ -1,3 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+
+// Agar uploads folder nahi hai, to khud hi bana do
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 require('dotenv').config();
 
 const http = require('http');
